@@ -532,6 +532,19 @@
       renderMenuList();
     };
 
+    // Category name label mapper
+    function categoryNameMap(cat) {
+      const map = {
+        korean: '한식 🍲',
+        chinese: '중식 🇨🇳',
+        japanese: '일식 🍣',
+        western: '양식 🍕',
+        snack: '분식 떡볶이',
+        dessert: '카페/디저트 🍰'
+      };
+      return map[cat] || '추천 맛집';
+    }
+
     // --- Slot Machine Spin Logic ---
     function pickRandomMenu() {
       if (isSpinning) return;
@@ -551,41 +564,34 @@
       elWinnerFrame.classList.add('opacity-0');
       elWinnerActions.classList.add('hidden');
 
+      // Reset transform if any
+      elSlotStrip.style.transform = 'translateY(0)';
+
       // Pick winner
       const winner = candidates[Math.floor(Math.random() * candidates.length)];
 
-      // Build random reel items array (30 items for spinning animation)
-      const reelItems = [];
-      for (let i = 0; i < 25; i++) {
-        reelItems.push(candidates[Math.floor(Math.random() * candidates.length)]);
-      }
-      reelItems.push(winner); // Last item is the winner!
-
-      // Render reel DOM
-      elSlotStrip.innerHTML = reelItems.map((item, idx) => `
-        <div class="slot-item py-4 flex flex-col items-center justify-center gap-2 transform transition-transform shrink-0">
-          <span class="text-6xl sm:text-7xl select-none filter drop-shadow-md">${item.emoji}</span>
-          <span class="text-xl sm:text-2xl font-extrabold font-display text-slate-800 dark:text-amber-300">
-            ${escapeHtml(item.name)}
-          </span>
-        </div>
-      `).join('');
-
-      // Animate Reel scrolling
       let step = 0;
-      const totalSteps = reelItems.length - 1;
-      let delay = 40;
+      const totalSteps = 24;
+      let delay = 35;
 
       function spinStep() {
-        const itemHeight = 110; // Approximate item height
-        elSlotStrip.style.transform = `translateY(-${step * itemHeight}px)`;
+        const tempItem = candidates[Math.floor(Math.random() * candidates.length)];
+        
+        elSlotStrip.innerHTML = `
+          <div class="slot-item flex flex-col items-center justify-center gap-2 transform transition-all">
+            <span class="text-7xl sm:text-8xl select-none filter drop-shadow-md">${tempItem.emoji}</span>
+            <span class="text-2xl sm:text-3xl font-extrabold font-display text-slate-800 dark:text-amber-300">
+              ${escapeHtml(tempItem.name)}
+            </span>
+          </div>
+        `;
         playTickSound();
 
         step++;
-        if (step <= totalSteps) {
-          // Gradually slow down
-          if (step > totalSteps - 10) delay += 20;
-          if (step > totalSteps - 5) delay += 40;
+        if (step < totalSteps) {
+          // Gradually slow down near end
+          if (step > totalSteps - 8) delay += 25;
+          if (step > totalSteps - 4) delay += 45;
           setTimeout(spinStep, delay);
         } else {
           onSpinFinish(winner);
@@ -601,12 +607,30 @@
       elBtnPickLabel.textContent = '다른 메뉴 다시 뽑기! 🎲';
       elWinnerFrame.classList.remove('opacity-0');
 
+      // Render Final Winner Display Card Prominently
+      elSlotStrip.innerHTML = `
+        <div class="winner-display flex flex-col items-center justify-center gap-2 animate-pop text-center p-2">
+          <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs sm:text-sm font-bold shadow-md tracking-wider">
+            🎉 오늘의 추천 메뉴 당첨!
+          </div>
+          <span class="text-7xl sm:text-8xl select-none filter drop-shadow-xl transform hover:scale-110 transition-transform my-1">
+            ${winner.emoji}
+          </span>
+          <h3 class="text-3xl sm:text-4xl font-black font-display text-slate-900 dark:text-amber-300 tracking-tight">
+            ${escapeHtml(winner.name)}
+          </h3>
+          <span class="text-xs px-3 py-1 rounded-lg bg-amber-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border border-amber-300/50 dark:border-slate-700">
+            #${categoryNameMap(winner.category)}
+          </span>
+        </div>
+      `;
+
       // Play victory sound & confetti
       playWinFanfare();
       if (window.confetti) {
         confetti({
-          particleCount: 80,
-          spread: 70,
+          particleCount: 100,
+          spread: 80,
           origin: { y: 0.6 }
         });
       }
