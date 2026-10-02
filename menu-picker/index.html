@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘 뭐 먹지? | 랜덤 메뉴 추천기 MenuPicker</title>
+  <meta name="description" content="결정 장애 해결사! 결정하기 힘든 오늘 점심, 저녁 메뉴를 랜덤 룰렛으로 추천받으세요." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Gowun Batang"', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+            }
+          },
+          animation: {
+            'bounce-short': 'bounceShort 0.5s ease infinite alternate',
+            'spin-slow': 'spin 8s linear infinite',
+            'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          },
+          keyframes: {
+            bounceShort: {
+              '0%': { transform: 'translateY(0)' },
+              '100%': { transform: 'translateY(-10px)' },
+            },
+            pop: {
+              '0%': { transform: 'scale(0.8)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.7);
+    }
+
+    /* Glassmorphism */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .dark .glass-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Slot Machine Wheel Styling */
+    .slot-window {
+      mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    }
+
+    .slot-strip {
+      transition: transform 0.1s ease-out;
+    }
+  </style>
+</head>
+<body class="h-full bg-amber-50/40 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 antialiased selection:bg-orange-500 selection:text-white">
+
+  <!-- Background Decorative Shapes -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute -top-40 -right-40 w-96 h-96 bg-orange-400/15 dark:bg-orange-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 -left-40 w-96 h-96 bg-amber-400/15 dark:bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 right-1/4 w-96 h-96 bg-rose-400/15 dark:bg-rose-500/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- App Main Wrapper -->
+  <div class="min-h-full flex flex-col justify-between relative z-10">
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 flex items-center justify-center shadow-lg shadow-orange-500/30 text-white font-black text-2xl tracking-wider animate-bounce-short">
+          🍱
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 dark:from-orange-400 dark:to-amber-300 bg-clip-text text-transparent font-display">
+            오늘 뭐 먹지?
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">결정 장애 완벽 해결사 · 랜덤 메뉴 추천기</p>
+        </div>
+      </div>
+
+      <!-- Action Tools -->
+      <div class="flex items-center gap-2">
+        <!-- Back to Pomodoro Link -->
+        <a href="../index.html" title="뽀모도로 타이머로 이동" class="px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-900/80 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-all flex items-center gap-1.5">
+          <i data-lucide="timer" class="w-4 h-4 text-rose-500"></i>
+          <span class="hidden sm:inline">뽀모도로 타이머</span>
+        </a>
+
+        <!-- Sound Toggle -->
+        <button id="btn-sound-toggle" title="소리 설정" class="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-all hover:scale-105 active:scale-95">
+          <i data-lucide="volume-2" id="icon-sound-on" class="w-5 h-5"></i>
+          <i data-lucide="volume-x" id="icon-sound-off" class="w-5 h-5 hidden"></i>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btn-theme-toggle" title="테마 변경" class="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-all hover:scale-105 active:scale-95">
+          <i data-lucide="sun" id="icon-theme-sun" class="w-5 h-5 hidden"></i>
+          <i data-lucide="moon" id="icon-theme-moon" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-1 lg:grid-cols-12 gap-8 my-auto">
+
+      <!-- LEFT / TOP COLUMN: Slot Machine / Picker Wheel (7 cols) -->
+      <section class="lg:col-span-7 flex flex-col justify-between">
+        <div class="glass-card rounded-3xl p-6 sm:p-8 shadow-2xl shadow-orange-500/10 dark:shadow-none flex flex-col items-center relative overflow-hidden">
+
+          <!-- Category Filter Bar -->
+          <div class="w-full overflow-x-auto pb-2 mb-6">
+            <div id="category-chips" class="flex items-center gap-2 min-w-max">
+              <button data-category="all" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-bold transition-all bg-orange-500 text-white shadow-md shadow-orange-500/20">
+                ✨ 전체
+              </button>
+              <button data-category="korean" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200">
+                🍲 한식
+              </button>
+              <button data-category="chinese" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200">
+                🇨🇳 중식
+              </button>
+              <button data-category="japanese" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200">
+                🍣 일식
+              </button>
+              <button data-category="western" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200">
+                🍕 양식
+              </button>
+              <button data-category="snack" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200">
+                떡볶이 분식
+              </button>
+              <button data-category="dessert" class="cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200">
+                🍰 카페/디저트
+              </button>
+            </div>
+          </div>
+
+          <!-- Slot Machine Reel Display Card -->
+          <div class="relative w-full max-w-md h-64 sm:h-72 my-2 bg-gradient-to-b from-amber-100/90 to-orange-100/90 dark:from-slate-900 dark:to-slate-800 rounded-3xl border-4 border-amber-300 dark:border-amber-500/40 shadow-inner flex flex-col items-center justify-center p-4 overflow-hidden">
+            
+            <!-- Top/Bottom Indicator Glow Lines -->
+            <div class="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-amber-200/60 dark:from-slate-900 to-transparent pointer-events-none"></div>
+            <div class="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-amber-200/60 dark:from-slate-900 to-transparent pointer-events-none"></div>
+
+            <!-- Reel Slot Window -->
+            <div id="slot-container" class="slot-window w-full h-full flex items-center justify-center relative">
+              <div id="slot-strip" class="slot-strip flex flex-col items-center justify-center gap-4">
+                <!-- Initial Placeholder -->
+                <div class="slot-item flex flex-col items-center justify-center gap-2 transition-all transform scale-100">
+                  <span class="text-7xl sm:text-8xl select-none filter drop-shadow-md">🎲</span>
+                  <span class="text-xl sm:text-2xl font-bold font-display text-slate-700 dark:text-amber-300">
+                    버튼을 눌러 메뉴를 뽑으세요!
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Winner Highlight Frame Overlay -->
+            <div id="winner-frame" class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-36 rounded-2xl border-2 border-dashed border-orange-500/60 dark:border-amber-400/60 pointer-events-none opacity-0 transition-opacity"></div>
+          </div>
+
+          <!-- Primary Pick Button -->
+          <button id="btn-pick" class="mt-6 w-full max-w-md py-4 px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xl shadow-xl shadow-orange-500/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
+            <i data-lucide="sparkles" class="w-6 h-6 animate-spin-slow"></i>
+            <span id="btn-pick-label">오늘의 메뉴 추천받기!</span>
+          </button>
+
+          <!-- Winner Result Action Links (Hidden initially) -->
+          <div id="winner-actions" class="w-full max-w-md mt-6 pt-6 border-t border-slate-200/60 dark:border-slate-800 hidden animate-pop">
+            <p class="text-center text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
+              🎉 당첨 메뉴 검색 &amp; 배달 연결
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+              <a id="link-naver-map" target="_blank" rel="noopener noreferrer" class="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+                <i data-lucide="map-pin" class="w-4 h-4"></i> 네이버 지도 검색
+              </a>
+              <a id="link-baemin" target="_blank" rel="noopener noreferrer" class="py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i> 배민/요기요 검색
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- RIGHT / BOTTOM COLUMN: Menu Manager & History (5 cols) -->
+      <section class="lg:col-span-5 flex flex-col gap-6">
+        
+        <!-- Menu List & Custom Addition Card -->
+        <div class="glass-card rounded-3xl p-6 sm:p-8 shadow-2xl shadow-orange-500/10 dark:shadow-none flex flex-col flex-1 min-h-[420px]">
+          
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-orange-500/10 text-orange-500">
+                <i data-lucide="utensils" class="w-5 h-5"></i>
+              </div>
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">메뉴 후보 리스트</h2>
+              <span id="menu-count-badge" class="ml-1 text-xs px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-slate-800 text-amber-800 dark:text-amber-400 font-bold">
+                0
+              </span>
+            </div>
+
+            <!-- Reset Default Menus button -->
+            <button id="btn-reset-default" title="기본 메뉴로 복원" class="text-xs text-slate-400 hover:text-orange-500 transition-colors flex items-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 초기화
+            </button>
+          </div>
+
+          <!-- Add Menu Input Form -->
+          <form id="add-menu-form" class="flex items-center gap-2 mb-4">
+            <select id="input-menu-emoji" class="py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-lg focus:outline-none focus:ring-2 focus:ring-orange-500 shrink-0">
+              <option value="🍲">🍲</option>
+              <option value="🍱">🍱</option>
+              <option value="🍚">🍚</option>
+              <option value="🍜">🍜</option>
+              <option value="🍕">🍕</option>
+              <option value="🍔">🍔</option>
+              <option value="🥩">🥩</option>
+              <option value="🍣">🍣</option>
+              <option value="🥗">🥗</option>
+              <option value="🍰">🍰</option>
+            </select>
+            <input
+              type="text"
+              id="input-menu-name"
+              placeholder="새 음식 이름 (예: 마라탕)"
+              required
+              class="flex-1 py-2.5 px-3 rounded-xl bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800 dark:text-slate-100 placeholder-slate-400"
+            />
+            <select id="input-menu-category" class="py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 shrink-0">
+              <option value="korean">한식</option>
+              <option value="chinese">중식</option>
+              <option value="japanese">일식</option>
+              <option value="western">양식</option>
+              <option value="snack">분식</option>
+              <option value="dessert">디저트</option>
+            </select>
+            <button
+              type="submit"
+              title="메뉴 추가"
+              class="p-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white shadow-md transition-all hover:scale-105 active:scale-95 shrink-0"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </form>
+
+          <!-- Menu Chips List -->
+          <div id="menu-list-container" class="flex-1 overflow-y-auto max-h-[260px] pr-1">
+            <div id="menu-chips-wrapper" class="flex flex-wrap gap-2"></div>
+          </div>
+
+        </div>
+
+        <!-- History Card -->
+        <div class="glass-card rounded-3xl p-5 shadow-xl shadow-orange-500/5 dark:shadow-none">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
+            <i data-lucide="history" class="w-4 h-4"></i> 최근 뽑은 메뉴 기록
+          </h3>
+          <div id="history-list" class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-medium text-slate-600 dark:text-slate-300 min-h-[32px]">
+            <span class="text-slate-400 italic">아직 기록이 없습니다.</span>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-400 dark:text-slate-600">
+      <p>© 2026 MenuPicker. 오늘 뭐 먹을지 고민될 때는 룰렛을 돌려보세요!</p>
+    </footer>
+
+  </div>
+
+
+  <!-- JavaScript App Logic -->
+  <script>
+    // --- Initial Default Menu Database ---
+    const DEFAULT_MENUS = [
+      // 한식 (korean)
+      { id: 'm1', name: '김치찌개', category: 'korean', emoji: '🍲' },
+      { id: 'm2', name: '된장찌개', category: 'korean', emoji: '🍲' },
+      { id: 'm3', name: '제육볶음', category: 'korean', emoji: '🥩' },
+      { id: 'm4', name: '비빔밥', category: 'korean', emoji: '🍚' },
+      { id: 'm5', name: '삼겹살', category: 'korean', emoji: '🥓' },
+      { id: 'm6', name: '갈비탕', category: 'korean', emoji: '🍲' },
+      { id: 'm7', name: '순두부찌개', category: 'korean', emoji: '🍲' },
+      { id: 'm8', name: '부대찌개', category: 'korean', emoji: '🥘' },
+      { id: 'm9', name: '닭갈비', category: 'korean', emoji: '🥘' },
+      { id: 'm10', name: '국밥/설렁탕', category: 'korean', emoji: '🥣' },
+
+      // 중식 (chinese)
+      { id: 'm11', name: '짜장면', category: 'chinese', emoji: '🍜' },
+      { id: 'm12', name: '짬뽕', category: 'chinese', emoji: '🍜' },
+      { id: 'm13', name: '탕수육', category: 'chinese', emoji: '🥢' },
+      { id: 'm14', name: '마라탕', category: 'chinese', emoji: '🥘' },
+      { id: 'm15', name: '마라샹궈', category: 'chinese', emoji: '🥘' },
+      { id: 'm16', name: '양꼬치', category: 'chinese', emoji: '🍢' },
+      { id: 'm17', name: '볶음밥', category: 'chinese', emoji: '🍚' },
+
+      // 일식 (japanese)
+      { id: 'm18', name: '초밥/스시', category: 'japanese', emoji: '🍣' },
+      { id: 'm19', name: '돈카츠', category: 'japanese', emoji: '🍱' },
+      { id: 'm20', name: '라멘', category: 'japanese', emoji: '🍜' },
+      { id: 'm21', name: '사케동 (연어덮밥)', category: 'japanese', emoji: '🍚' },
+      { id: 'm22', name: '우동', category: 'japanese', emoji: '🍜' },
+      { id: 'm23', name: '가츠동', category: 'japanese', emoji: '🍲' },
+      { id: 'm24', name: '야키소바', category: 'japanese', emoji: '🍝' },
+
+      // 양식 (western)
+      { id: 'm25', name: '피자', category: 'western', emoji: '🍕' },
+      { id: 'm26', name: '수제버거', category: 'western', emoji: '🍔' },
+      { id: 'm27', name: '파스타', category: 'western', emoji: '🍝' },
+      { id: 'm28', name: '스테이크', category: 'western', emoji: '🥩' },
+      { id: 'm29', name: '리조또', category: 'western', emoji: '🥘' },
+      { id: 'm30', name: '샌드위치', category: 'western', emoji: '🥪' },
+
+      // 분식 (snack)
+      { id: 'm31', name: '떡볶이', category: 'snack', emoji: '🍢' },
+      { id: 'm32', name: '김밥', category: 'snack', emoji: '🍙' },
+      { id: 'm33', name: '순대&튀김', category: 'snack', emoji: '🥟' },
+      { id: 'm34', name: '라면', category: 'snack', emoji: '🍜' },
+      { id: 'm35', name: '쫄면', category: 'snack', emoji: '🍜' },
+
+      // 디저트 / 카페 (dessert)
+      { id: 'm36', name: '조각 케이크 & 아메리카노', category: 'dessert', emoji: '🍰' },
+      { id: 'm37', name: '크로플', category: 'dessert', emoji: '🧇' },
+      { id: 'm38', name: '빙수', category: 'dessert', emoji: '🍧' },
+      { id: 'm39', name: '마카롱', category: 'dessert', emoji: '🧁' },
+      { id: 'm40', name: '샐러드 & 포케', category: 'dessert', emoji: '🥗' }
+    ];
+
+    const STORAGE_KEY_MENUS = 'menupicker_custom_menus_v1';
+    const STORAGE_KEY_HISTORY = 'menupicker_history_v1';
+
+    let menuList = [];
+    let historyList = [];
+    let currentCategory = 'all';
+    let isSpinning = false;
+    let soundEnabled = true;
+
+    // --- Web Audio Tick & Win Sound Generator ---
+    function playTickSound() {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400 + Math.random() * 200, ctx.currentTime);
+
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.05);
+      } catch (e) {}
+    }
+
+    function playWinFanfare() {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+
+          gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
+          gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + idx * 0.1 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.5);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(ctx.currentTime + idx * 0.1);
+          osc.stop(ctx.currentTime + idx * 0.1 + 0.5);
+        });
+      } catch (e) {}
+    }
+
+    // --- DOM References ---
+    const elBtnPick = document.getElementById('btn-pick');
+    const elBtnPickLabel = document.getElementById('btn-pick-label');
+    const elSlotStrip = document.getElementById('slot-strip');
+    const elWinnerFrame = document.getElementById('winner-frame');
+    const elWinnerActions = document.getElementById('winner-actions');
+    const elLinkNaverMap = document.getElementById('link-naver-map');
+    const elLinkBaemin = document.getElementById('link-baemin');
+
+    const elCategoryChips = document.getElementById('category-chips');
+    const elMenuChipsWrapper = document.getElementById('menu-chips-wrapper');
+    const elMenuCountBadge = document.getElementById('menu-count-badge');
+    const elAddMenuForm = document.getElementById('add-menu-form');
+    const elInputMenuName = document.getElementById('input-menu-name');
+    const elInputMenuCategory = document.getElementById('input-menu-category');
+    const elInputMenuEmoji = document.getElementById('input-menu-emoji');
+    const elBtnResetDefault = document.getElementById('btn-reset-default');
+    const elHistoryList = document.getElementById('history-list');
+
+    const elBtnSoundToggle = document.getElementById('btn-sound-toggle');
+    const elIconSoundOn = document.getElementById('icon-sound-on');
+    const elIconSoundOff = document.getElementById('icon-sound-off');
+    const elBtnThemeToggle = document.getElementById('btn-theme-toggle');
+    const elIconThemeSun = document.getElementById('icon-theme-sun');
+    const elIconThemeMoon = document.getElementById('icon-theme-moon');
+
+    // --- Data Load & Save ---
+    function loadStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_MENUS);
+        menuList = saved ? JSON.parse(saved) : [...DEFAULT_MENUS];
+
+        const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
+        historyList = savedHistory ? JSON.parse(savedHistory) : [];
+      } catch (e) {
+        menuList = [...DEFAULT_MENUS];
+      }
+    }
+
+    function saveStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_MENUS, JSON.stringify(menuList));
+        localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(historyList));
+      } catch (e) {}
+    }
+
+    // --- Render Menu List & History ---
+    function renderMenuList() {
+      const filtered = currentCategory === 'all' 
+        ? menuList 
+        : menuList.filter(m => m.category === currentCategory);
+
+      elMenuCountBadge.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        elMenuChipsWrapper.innerHTML = `
+          <p class="text-xs text-slate-400 italic p-2">이 카테고리에 등록된 메뉴가 없습니다.</p>
+        `;
+        return;
+      }
+
+      elMenuChipsWrapper.innerHTML = filtered.map(m => `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 group hover:border-orange-400 transition-all">
+          <span>${m.emoji}</span>
+          <span>${escapeHtml(m.name)}</span>
+          <button onclick="deleteMenu('${m.id}')" title="삭제" class="ml-1 text-slate-400 hover:text-rose-500 opacity-60 group-hover:opacity-100 transition-opacity">
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>
+        </span>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderHistory() {
+      if (historyList.length === 0) {
+        elHistoryList.innerHTML = `<span class="text-slate-400 italic">아직 기록이 없습니다.</span>`;
+        return;
+      }
+      elHistoryList.innerHTML = historyList.slice(0, 5).map(item => `
+        <span class="px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold shrink-0 flex items-center gap-1">
+          <span>${item.emoji}</span>
+          <span>${escapeHtml(item.name)}</span>
+        </span>
+      `).join('');
+    }
+
+    window.deleteMenu = function(id) {
+      if (isSpinning) return;
+      menuList = menuList.filter(m => m.id !== id);
+      saveStorage();
+      renderMenuList();
+    };
+
+    // --- Slot Machine Spin Logic ---
+    function pickRandomMenu() {
+      if (isSpinning) return;
+
+      const candidates = currentCategory === 'all'
+        ? menuList
+        : menuList.filter(m => m.category === currentCategory);
+
+      if (candidates.length === 0) {
+        alert('추천할 메뉴 후보가 없습니다. 메뉴를 등록해주세요!');
+        return;
+      }
+
+      isSpinning = true;
+      elBtnPick.disabled = true;
+      elBtnPickLabel.textContent = '메뉴 고르는 중... 🤤';
+      elWinnerFrame.classList.add('opacity-0');
+      elWinnerActions.classList.add('hidden');
+
+      // Pick winner
+      const winner = candidates[Math.floor(Math.random() * candidates.length)];
+
+      // Build random reel items array (30 items for spinning animation)
+      const reelItems = [];
+      for (let i = 0; i < 25; i++) {
+        reelItems.push(candidates[Math.floor(Math.random() * candidates.length)]);
+      }
+      reelItems.push(winner); // Last item is the winner!
+
+      // Render reel DOM
+      elSlotStrip.innerHTML = reelItems.map((item, idx) => `
+        <div class="slot-item py-4 flex flex-col items-center justify-center gap-2 transform transition-transform shrink-0">
+          <span class="text-6xl sm:text-7xl select-none filter drop-shadow-md">${item.emoji}</span>
+          <span class="text-xl sm:text-2xl font-extrabold font-display text-slate-800 dark:text-amber-300">
+            ${escapeHtml(item.name)}
+          </span>
+        </div>
+      `).join('');
+
+      // Animate Reel scrolling
+      let step = 0;
+      const totalSteps = reelItems.length - 1;
+      let delay = 40;
+
+      function spinStep() {
+        const itemHeight = 110; // Approximate item height
+        elSlotStrip.style.transform = `translateY(-${step * itemHeight}px)`;
+        playTickSound();
+
+        step++;
+        if (step <= totalSteps) {
+          // Gradually slow down
+          if (step > totalSteps - 10) delay += 20;
+          if (step > totalSteps - 5) delay += 40;
+          setTimeout(spinStep, delay);
+        } else {
+          onSpinFinish(winner);
+        }
+      }
+
+      spinStep();
+    }
+
+    function onSpinFinish(winner) {
+      isSpinning = false;
+      elBtnPick.disabled = false;
+      elBtnPickLabel.textContent = '다른 메뉴 다시 뽑기! 🎲';
+      elWinnerFrame.classList.remove('opacity-0');
+
+      // Play victory sound & confetti
+      playWinFanfare();
+      if (window.confetti) {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      // Add to history
+      historyList.unshift(winner);
+      if (historyList.length > 10) historyList.pop();
+      saveStorage();
+      renderHistory();
+
+      // Update Search Action Links
+      const searchKeyword = encodeURIComponent(winner.name);
+      elLinkNaverMap.href = `https://map.naver.com/p/search/${searchKeyword}`;
+      elLinkBaemin.href = `https://m.baemin.com/` || `https://www.google.com/search?q=${searchKeyword}+배달`;
+      elWinnerActions.classList.remove('hidden');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[m]);
+    }
+
+    // --- Category Filter Handler ---
+    elCategoryChips.addEventListener('click', (e) => {
+      const chip = e.target.closest('.cat-chip');
+      if (!chip || isSpinning) return;
+
+      document.querySelectorAll('.cat-chip').forEach(c => {
+        c.className = 'cat-chip px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200';
+      });
+      chip.className = 'cat-chip px-3.5 py-1.5 rounded-full text-xs font-bold transition-all bg-orange-500 text-white shadow-md shadow-orange-500/20';
+
+      currentCategory = chip.dataset.category;
+      renderMenuList();
+    });
+
+    // --- Add Custom Menu ---
+    elAddMenuForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = elInputMenuName.value.trim();
+      const category = elInputMenuCategory.value;
+      const emoji = elInputMenuEmoji.value;
+
+      if (!name) return;
+
+      const newMenu = {
+        id: 'custom_' + Date.now(),
+        name,
+        category,
+        emoji
+      };
+
+      menuList.unshift(newMenu);
+      saveStorage();
+      renderMenuList();
+
+      elInputMenuName.value = '';
+    });
+
+    // Reset default menus
+    elBtnResetDefault.addEventListener('click', () => {
+      if (confirm('모든 메뉴를 기본 리스트로 초기화할까요?')) {
+        menuList = [...DEFAULT_MENUS];
+        saveStorage();
+        renderMenuList();
+      }
+    });
+
+    // --- Theme & Sound Toggles ---
+    function initTheme() {
+      const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        elIconThemeSun.classList.remove('hidden');
+        elIconThemeMoon.classList.add('hidden');
+      } else {
+        document.documentElement.classList.remove('dark');
+        elIconThemeSun.classList.add('hidden');
+        elIconThemeMoon.classList.remove('hidden');
+      }
+    }
+
+    elBtnThemeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.theme = isDark ? 'dark' : 'light';
+      elIconThemeSun.classList.toggle('hidden', !isDark);
+      elIconThemeMoon.classList.toggle('hidden', isDark);
+    });
+
+    elBtnSoundToggle.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      elIconSoundOn.classList.toggle('hidden', !soundEnabled);
+      elIconSoundOff.classList.toggle('hidden', soundEnabled);
+    });
+
+    // --- Init App ---
+    function init() {
+      initTheme();
+      loadStorage();
+      renderMenuList();
+      renderHistory();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    elBtnPick.addEventListener('click', pickRandomMenu);
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

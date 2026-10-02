@@ -1,6 +1,13 @@
-# 🍅 FocusPulse - 뽀모도로 타이머 & 할 일 관리 앱
+# 🍅 FocusPulse & 🍱 MenuPicker 프로젝트
 
-FocusPulse는 공부와 업무의 몰입을 극대화해주는 모던하고 깔끔한 웹 기반 뽀모도로 타이머 및 투두(Todo) 관리 웹 애플리케이션입니다.
+본 저장소는 사용자의 생산성과 편의성을 높여주는 모던한 웹 애플리케이션 모음입니다.
+
+1. **🍅 FocusPulse (뽀모도로 타이머 & 할 일 관리)**: [index.html](index.html)
+2. **🍱 MenuPicker (오늘 뭐 먹지? 랜덤 메뉴 추천기)**: [menu-picker/index.html](menu-picker/index.html)
+
+---
+
+## 🍅 FocusPulse (뽀모도로 타이머 & 할 일 관리)
 
 ![FocusPulse](/index.html)
 
