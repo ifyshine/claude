@@ -1,47 +1,51 @@
-# 🍅 FocusPulse & 🍱 MenuPicker 프로젝트
+# 🚀 Focus & Life Web Applications Portal
 
-본 저장소는 사용자의 생산성과 편의성을 높여주는 모던한 웹 애플리케이션 모음입니다.
+생산성과 매일의 라이프스타일을 높여주는 모던 웹 애플리케이션 모음 저장소입니다.
 
-1. **🍅 FocusPulse (뽀모도로 타이머 & 할 일 관리)**: [index.html](index.html)
-2. **🍱 MenuPicker (오늘 뭐 먹지? 랜덤 메뉴 추천기)**: [menu-picker/index.html](menu-picker/index.html)
+## 📂 저장소 구조
 
----
-
-## 🍅 FocusPulse (뽀모도로 타이머 & 할 일 관리)
-
-![FocusPulse](/index.html)
-
-## ✨ 주요 기능
-
-### 🎯 뽀모도로 타이머 (Pomodoro Timer)
-- **3가지 몰입 모드**: 
-  - 🎯 집중 모드 (기본 25분)
-  - ☕ 짧은 휴식 (기본 5분)
-  - 🌴 긴 휴식 (기본 15분)
-- **시각적 프로그레스 링**: SVG 원형 애니메이션 타이머
-- **웹 오디오 차임벨**: 외부 파일 없이 동작하는 디지털 종소리 알림
-- **브라우저 알림**: 타이머 종료 시 팝업 알림 지원
-- **커스텀 설정**: 집중/휴식 시간 변경 및 자동 시작 옵션
-
-### 📋 할 일 목록 (Todo List)
-- **목표 관리**: 새로운 할 일 추가, 완료 체크, 삭제 및 필터링
-- **뽀모도로 연동**: 🎯 버튼 클릭 시 특정 할 일을 뽀모도로 타이머의 '현재 목표'로 설정
-- **예상 뽀모도로(🍅) 카운터**: 할 일마다 필요한 뽀모도로 수 설정 및 완료 카운팅
-- **로컬 저장소 (LocalStorage)**: 작성한 할 일과 일일 통계가 브라우저에 자동 저장됨
-
-### 🎨 디자인 & UI
-- **모던 모바일/데스크톱 디자인**: Tailwind CSS & Glassmorphic 카드 디자인
-- **다크/라이트 모드**: 브라우저 환경 설정 반영 및 클릭 한 번으로 테마 전환
-- **테마별 앰비언트 글로우 효과**: 집중/휴식 모드 전환 시 세련된 배경색 전환
-
-## 🚀 사용 방법
-
-단일 `index.html` 파일로 구성되어 있어 별도의 서버 설정이나 npm 설치 없이 브라우저에서 실행할 수 있습니다.
-
-```bash
-# 로컬에서 바로 실행 (macOS 예시)
-open index.html
+```text
+git_test/
+├── index.html            # 프로젝트 통합 메인 대시보드 포털
+├── pomodoro/             # 🍅 뽀모도로 타이머 & 투두 앱
+│   ├── index.html
+│   └── README.md
+└── menu-picker/          # 🍱 오늘 뭐 먹지? 랜덤 메뉴 추천기 앱
+    ├── index.html
+    └── README.md
 ```
 
 ---
-© 2026 FocusPulse. All rights reserved.
+
+## 🛠️ 제공 서비스 소개
+
+### 1. 🍅 FocusPulse (뽀모도로 타이머 & 할 일 관리)
+- **위치**: [`pomodoro/index.html`](pomodoro/index.html)
+- **주요 기능**:
+  - 25분 집중, 5분/15분 휴식 몰입 타이머 (원형 SVG 애니메이션)
+  - 웹 오디오 API 알림음 및 브라우저 팝업 알림
+  - 할 일(Todo) 목록 작성, 뽀모도로 목표 🎯 지정 및 예상/완료 카운터
+
+### 2. 🍱 MenuPicker (오늘 뭐 먹지? 랜덤 메뉴 추천기)
+- **위치**: [`menu-picker/index.html`](menu-picker/index.html)
+- **주요 기능**:
+  - 슬롯머신 룰렛 애니메이션 & 팡파레 효과음
+  - 카테고리별(한식/중식/일식/양식/분식/디저트) 메뉴 필터링
+  - 당첨 메뉴 네이버 지도 및 배달 앱 연결 검색
+
+---
+
+## 🚀 실행 방법
+
+웹 브라우저에서 `index.html` 또는 각 앱 폴더의 `index.html`을 열어 즉시 실행할 수 있습니다.
+
+```bash
+# 통합 포털 바로 열기 (macOS 예시)
+open index.html
+
+# 뽀모도로 타이머 앱 바로 열기
+open pomodoro/index.html
+```
+
+---
+© 2026 Focus & Life Suite. All rights reserved.
